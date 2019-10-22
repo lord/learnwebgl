@@ -17,6 +17,17 @@
 <canvas id="c"></canvas>
 <script src="https://webglfundamentals.org/webgl/resources/webgl-utils.js"></script>
 <!-- vertex shader -->
+<script id="2d-vertex-shader" type="x-shader/x-vertex">
+attribute vec2 a_position;
+void main() {
+  gl_Position = vec4(a_position, 0.5, 1.);
+}
+</script>
+<script id="2d-fragment-shader" type="x-shader/x-vertex">
+void main() {
+  gl_FragColor = vec4(1., 0., 0., 1.);
+}
+</script>
 <script id="3d-vertex-shader" type="x-shader/x-vertex">
 attribute vec4 a_position;
 attribute vec3 a_normal;
@@ -86,17 +97,33 @@ void main() {
     }
 
     // setup GLSL program
-    var program = webglUtils.createProgramFromScripts(gl, ["3d-vertex-shader", "3d-fragment-shader"]);
+    var program3d = webglUtils.createProgramFromScripts(gl, ["3d-vertex-shader", "3d-fragment-shader"]);
+    var program2d = webglUtils.createProgramFromScripts(gl, ["2d-vertex-shader", "2d-fragment-shader"]);
 
     // look up where the vertex data needs to go.
-    var positionLocation = gl.getAttribLocation(program, "a_position");
-    var normalLocation = gl.getAttribLocation(program, "a_normal");
-    var colorLocation = gl.getAttribLocation(program, "a_color");
-    var baryLocation = gl.getAttribLocation(program, "a_bary");
+    var positionLocation = gl.getAttribLocation(program3d, "a_position");
+    var normalLocation = gl.getAttribLocation(program3d, "a_normal");
+    var colorLocation = gl.getAttribLocation(program3d, "a_color");
+    var baryLocation = gl.getAttribLocation(program3d, "a_bary");
+
+    var position2dLocation = gl.getAttribLocation(program2d, "a_position");
 
     // lookup uniforms
-    var worldMatrixLocation = gl.getUniformLocation(program, "u_world");
-    var projectionMatrixLocation = gl.getUniformLocation(program, "u_projection");
+    var worldMatrixLocation = gl.getUniformLocation(program3d, "u_world");
+    var projectionMatrixLocation = gl.getUniformLocation(program3d, "u_projection");
+
+    // Create a buffer to put positions in
+    var screenVertices = gl.createBuffer();
+    // Bind it to ARRAY_BUFFER (think of it as ARRAY_BUFFER = positionBuffer)
+    gl.bindBuffer(gl.ARRAY_BUFFER, screenVertices);
+    // Put geometry data into buffer
+    gl.bufferData(
+        gl.ARRAY_BUFFER,
+        new Float32Array(new Float32Array([
+          -1, -1, -1, 1, 1, -1,
+          1, 1, -1, 1, 1, -1,
+        ])),
+        gl.STATIC_DRAW);
 
     // Create a buffer to put positions in
     var positionBuffer = gl.createBuffer();
@@ -206,11 +233,11 @@ void main() {
 
       // Enable the depth buffer
       gl.enable(gl.DEPTH_TEST);
-      drawIcosohedron();
+      drawScreenStuff(gl);
     }
     function drawIcosohedron() {
-      // Tell it to use our program (pair of shaders)
-      gl.useProgram(program);
+      // Tell it to use our program3d (pair of shaders)
+      gl.useProgram(program3d);
 
       // Turn on the position attribute
       gl.enableVertexAttribArray(positionLocation);
@@ -303,6 +330,31 @@ void main() {
       var primitiveType = gl.TRIANGLES;
       var offset = 0;
       var count = 20 * 3;
+      gl.drawArrays(primitiveType, offset, count);
+    }
+    // Draw the pixel shader
+    function drawScreenStuff() {
+      gl.useProgram(program2d);
+
+      // Turn on the position attribute
+      gl.enableVertexAttribArray(position2dLocation);
+
+      // Bind the position buffer.
+      gl.bindBuffer(gl.ARRAY_BUFFER, screenVertices);
+
+      // Tell the position attribute how to get data out of positionBuffer (ARRAY_BUFFER)
+      var size = 2;          // 3 components per iteration
+      var type = gl.FLOAT;   // the data is 32bit floats
+      var normalize = false; // don't positionize the data
+      var stride = 0;        // 0 = move forward size * sizeof(type) each iteration to get the next position
+      var offset = 0;        // start at the beginning of the buffer
+      gl.vertexAttribPointer(
+          position2dLocation, size, type, normalize, stride, offset);
+
+      // Draw the geometry.
+      var primitiveType = gl.TRIANGLES;
+      var offset = 0;
+      var count = 2 * 3;
       gl.drawArrays(primitiveType, offset, count);
     }
   }
