@@ -23,16 +23,17 @@ attribute vec3 a_normal;
 attribute vec4 a_color;
 varying vec3 v_normal;
 
-uniform mat4 u_matrix;
+uniform mat4 u_projection;
+uniform mat4 u_world;
 
 varying vec4 v_color;
 
 void main() {
   // Multiply the position by the matrix.
-  gl_Position = u_matrix * a_position;
+  gl_Position = u_projection * a_position;
 
   // Pass the color to the fragment shader.
-  v_normal = a_normal;
+  v_normal = mat3(u_world) * a_normal;
   v_color = a_color;
 }
 </script>
@@ -46,8 +47,8 @@ varying vec4 v_color;
 void main() {
   gl_FragColor = v_color;
   vec3 normal = normalize(v_normal.xyz);
-  float light = dot(normal, vec3(0.,0.,1.));
-  gl_FragColor.rgb *= light;
+  float light = dot(normal, vec3(0.5,0.5,1.5));
+  gl_FragColor.rgb *= max(0.2, light);
 }
 </script><script>
   function main() {
@@ -68,7 +69,8 @@ void main() {
     var colorLocation = gl.getAttribLocation(program, "a_color");
 
     // lookup uniforms
-    var matrixLocation = gl.getUniformLocation(program, "u_matrix");
+    var worldMatrixLocation = gl.getUniformLocation(program, "u_world");
+    var projectionMatrixLocation = gl.getUniformLocation(program, "u_projection");
 
     // Create a buffer to put positions in
     var positionBuffer = gl.createBuffer();
@@ -109,6 +111,7 @@ void main() {
     var n = 190;
     function update() {
       n += 1;
+      translation[1] = Math.sin(n/30)*5;
       rotation[1] = degToRad(n);
       rotation[0] = degToRad(180 + Math.sin(n/100)*40);
       drawScene();
@@ -184,7 +187,7 @@ void main() {
       gl.vertexAttribPointer(
           colorLocation, size, type, normalize, stride, offset);
 
-      // Compute the matrix
+      // Compute the projection matrix
       var aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
       var zNear = 1;
       var zFar = 2000;
@@ -196,7 +199,18 @@ void main() {
       matrix = m4.scale(matrix, scale[0], scale[1], scale[2]);
 
       // Set the matrix.
-      gl.uniformMatrix4fv(matrixLocation, false, matrix);
+      gl.uniformMatrix4fv(projectionMatrixLocation, false, matrix);
+
+      // Compute the world matrix
+      var aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
+      var zNear = 1;
+      var zFar = 2000;
+      var matrix = m4.xRotation(rotation[0]);
+      matrix = m4.yRotate(matrix, rotation[1]);
+      matrix = m4.zRotate(matrix, rotation[2]);
+
+      // Set the matrix.
+      gl.uniformMatrix4fv(worldMatrixLocation, false, matrix);
 
       // Draw the geometry.
       var primitiveType = gl.TRIANGLES;
