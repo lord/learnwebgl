@@ -70,7 +70,7 @@ void main() {
   vec3 color = vec3( smoothstep((spacing-width)/2., (spacing-width)/2.+1., hashcoords) -
                      smoothstep(spacing-(spacing-width)/2., spacing-(spacing-width)/2.+1., hashcoords) );
 
-  gl_FragColor = max(vec4(max(color, vec3(border*light*0.4)), 1.0), 0.07);
+  gl_FragColor = max(vec4(max(color, vec3(border*light*0.2)), 1.0), 0.07);
 }
 </script><script>
   function main() {
@@ -144,10 +144,10 @@ void main() {
     function update() {
       n += 1;
       translation[1] = Math.sin(n/30)*6;
-      rotation[1] = degToRad(n);
-      rotation[0] = degToRad(180 + Math.sin(n/100)*40);
+      rotation[1] = degToRad(n/2);
+      rotation[0] = degToRad(180 + Math.sin(n/200)*40);
       drawScene();
-    requestAnimationFrame(update);
+      requestAnimationFrame(update);
     }
 
     requestAnimationFrame(update);
