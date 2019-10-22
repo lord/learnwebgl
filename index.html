@@ -337,39 +337,61 @@ void main() {
     return myarr
   }
 
-  // Fill the buffer with the values that define a letter 'F'.
-  function setGeometry(gl) {
+  function icosohedron() {
     const N = 30.0;
     const PHI = 1.618033988 * N;
-
     var a = []
     ;[1, -1].forEach((i2) => {
-      ;[1, -1].forEach((i1) => {
-        ;[0, 1, 2].forEach((r) => {
-          a = a.concat(rot([0, -N,  PHI*i2], r))
-          a = a.concat(rot([ 0,  N,  PHI*i2], r))
-          a = a.concat(rot([PHI * i1, 0, N*i2], r))
-          // a = a.concat([0,0,0])
-          // a = a.concat([0,0,0])
-          // a = a.concat([0,0,0])
-        })
-      })
+     ;[1, -1].forEach((i1) => {
+       ;[0, 1, 2].forEach((r) => {
+         a = a.concat(rot([0, -N,  PHI*i2], r))
+         a = a.concat(rot([ 0,  N,  PHI*i2], r))
+         a = a.concat(rot([PHI * i1, 0, N*i2], r))
+         // a = a.concat([0,0,0])
+         // a = a.concat([0,0,0])
+         // a = a.concat([0,0,0])
+       })
+     })
     })
     ;[1, -1].forEach((i3) => {
-      ;[1, -1].forEach((i2) => {
-        ;[1, -1].forEach((i1) => {
-          a = a.concat([0,  N*i2,  PHI*i3])
-          a = a.concat([N*i1, PHI*i2,  0])
-          a = a.concat([PHI*i1,  0,  N*i3])
-        })
-      })
+     ;[1, -1].forEach((i2) => {
+       ;[1, -1].forEach((i1) => {
+         a = a.concat([0,  N*i2,  PHI*i3])
+         a = a.concat([N*i1, PHI*i2,  0])
+         a = a.concat([PHI*i1,  0,  N*i3])
+       })
+     })
     })
+    return a
+  }
+
+  // Fill the buffer with the values that define a letter 'F'.
+  function setGeometry(gl) {
     gl.bufferData(
         gl.ARRAY_BUFFER,
-        new Float32Array(a),
+        new Float32Array(icosohedron()),
         gl.STATIC_DRAW);
   }
 
+  // Fill the buffer with the values that define a letter 'F'.
+  function setNormals(gl) {
+    let a = icosohedron();
+    let normals = [];
+    for (var i = 0; i < a.length(); i+=3) {
+      let normal = [
+        a[0+i][0] + a[1+i][0] + a[2+i][0],
+        a[0+i][1] + a[1+i][1] + a[2+i][1],
+        a[0+i][2] + a[1+i][2] + a[2+i][2],
+      ];
+      normals.push(...normal);
+      normals.push(...normal);
+      normals.push(...normal);
+    }
+    gl.bufferData(
+        gl.ARRAY_BUFFER,
+        new Float32Array(normals),
+        gl.STATIC_DRAW);
+  }
   // Fill the buffer with colors for the 'F'.
   function setColors(gl) {
     var a = []
