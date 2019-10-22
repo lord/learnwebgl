@@ -21,7 +21,9 @@
 attribute vec4 a_position;
 attribute vec3 a_normal;
 attribute vec4 a_color;
+attribute vec2 a_bary;
 varying vec3 v_normal;
+varying vec2 v_bary;
 
 uniform mat4 u_projection;
 uniform mat4 u_world;
@@ -35,20 +37,34 @@ void main() {
   // Pass the color to the fragment shader.
   v_normal = mat3(u_world) * a_normal;
   v_color = a_color;
+  v_bary = a_bary;
 }
 </script>
 <!-- fragment shader -->
 <script id="3d-fragment-shader" type="x-shader/x-fragment">
+#extension GL_EXT_shader_texture_lod : enable
+#extension GL_OES_standard_derivatives : enable
+
 precision mediump float;
 
 varying vec3 v_normal;
 varying vec4 v_color;
+varying vec2 v_bary;
+
+float gridFactor (vec2 vBC, float width, float feather) {
+  float w1 = width - feather * 0.5;
+  vec3 bary = vec3(vBC.x, vBC.y, 1.0 - vBC.x - vBC.y);
+  vec3 d = fwidth(bary);
+  vec3 a3 = smoothstep(d * w1, d * (w1 + feather), bary);
+  return min(min(a3.x, a3.y), a3.z);
+}
 
 void main() {
-  gl_FragColor = v_color;
   vec3 normal = normalize(v_normal.xyz);
   float light = dot(normal, vec3(0.5,0.5,1.5));
-  gl_FragColor.rgb *= max(0.2, light);
+  float border = 1.0 - gridFactor(v_bary, 1.0, 0.5);
+  vec3 color = max(vec3(.5) * max(0.2, light), vec3(border));
+  gl_FragColor = vec4(color, 1.0);
 }
 </script><script>
   function main() {
@@ -56,6 +72,8 @@ void main() {
     /** @type {HTMLCanvasElement} */
     var canvas = document.getElementById("c");
     var gl = canvas.getContext("webgl");
+    gl.getExtension('OES_standard_derivatives');
+    gl.getExtension('EXT_shader_texture_lod');
     if (!gl) {
       return;
     }
@@ -67,6 +85,7 @@ void main() {
     var positionLocation = gl.getAttribLocation(program, "a_position");
     var normalLocation = gl.getAttribLocation(program, "a_normal");
     var colorLocation = gl.getAttribLocation(program, "a_color");
+    var baryLocation = gl.getAttribLocation(program, "a_bary");
 
     // lookup uniforms
     var worldMatrixLocation = gl.getUniformLocation(program, "u_world");
@@ -85,6 +104,13 @@ void main() {
     gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
     // Put geometry data into buffer
     setNormals(gl);
+
+    // Create a buffer to put positions in
+    var baryBuffer = gl.createBuffer();
+    // Bind it to ARRAY_BUFFER (think of it as ARRAY_BUFFER = baryBuffer)
+    gl.bindBuffer(gl.ARRAY_BUFFER, baryBuffer);
+    // Put geometry data into buffer
+    setBarycentric(gl);
 
     // Create a buffer to put colors in
     var colorBuffer = gl.createBuffer();
@@ -186,6 +212,22 @@ void main() {
       var offset = 0;               // start at the beginning of the buffer
       gl.vertexAttribPointer(
           colorLocation, size, type, normalize, stride, offset);
+
+
+      // Turn on the color attribute
+      gl.enableVertexAttribArray(baryLocation);
+
+      // Bind the bary buffer.
+      gl.bindBuffer(gl.ARRAY_BUFFER, baryBuffer);
+
+      // Tell the attribute how to get data out of baryBuffer (ARRAY_BUFFER)
+      var size = 2;                 // 3 components per iteration
+      var type = gl.FLOAT;  // the data is 8bit unsigned values
+      var normalize = false;         // normalize the data (convert from 0-255 to 0-1)
+      var stride = 0;               // 0 = move forward size * sizeof(type) each iteration to get the next position
+      var offset = 0;               // start at the beginning of the buffer
+      gl.vertexAttribPointer(
+          baryLocation, size, type, normalize, stride, offset);
 
       // Compute the projection matrix
       var aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
@@ -414,6 +456,23 @@ void main() {
     gl.bufferData(
         gl.ARRAY_BUFFER,
         new Float32Array(icosohedron()),
+        gl.STATIC_DRAW);
+  }
+
+  function setBarycentric(gl) {
+    let a = icosohedron();
+    let barys = [];
+    for (var i = 0; i < a.length; i+=9) {
+      let bary = [
+        0.,0.,
+        1.,0.,
+        0.,1.,
+      ];
+      barys.push(...bary);
+    }
+    gl.bufferData(
+        gl.ARRAY_BUFFER,
+        new Float32Array(barys),
         gl.STATIC_DRAW);
   }
 
