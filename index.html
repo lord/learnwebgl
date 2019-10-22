@@ -61,10 +61,16 @@ float gridFactor (vec2 vBC, float width, float feather) {
 
 void main() {
   vec3 normal = normalize(v_normal.xyz);
-  float light = dot(normal, vec3(0.5,0.5,1.5));
+  float light = max(0., dot(normal, vec3(0.5,0.5,1.5)));
   float border = 1.0 - gridFactor(v_bary, 1.0, 0.5);
-  vec3 color = max(vec3(.5) * max(0.2, light), vec3(border));
-  gl_FragColor = vec4(color, 1.0);
+
+  float spacing = 10.;
+  float hashcoords = mod(float(gl_FragCoord.x + gl_FragCoord.y), spacing);
+  float width = light * 5.0 + 1.;
+  vec3 color = vec3( smoothstep((spacing-width)/2., (spacing-width)/2.+1., hashcoords) -
+                     smoothstep(spacing-(spacing-width)/2., spacing-(spacing-width)/2.+1., hashcoords) );
+
+  gl_FragColor = vec4(max(color, vec3(border)), 1.0);
 }
 </script><script>
   function main() {
