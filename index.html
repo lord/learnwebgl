@@ -377,11 +377,11 @@ void main() {
   function setNormals(gl) {
     let a = icosohedron();
     let normals = [];
-    for (var i = 0; i < a.length(); i+=3) {
+    for (var i = 0; i < a.length; i+=9) {
       let normal = [
-        a[0+i][0] + a[1+i][0] + a[2+i][0],
-        a[0+i][1] + a[1+i][1] + a[2+i][1],
-        a[0+i][2] + a[1+i][2] + a[2+i][2],
+        a[i+0] + a[i+3] + a[i+6],
+        a[i+1] + a[i+4] + a[i+7],
+        a[i+2] + a[i+5] + a[i+8],
       ];
       normals.push(...normal);
       normals.push(...normal);
