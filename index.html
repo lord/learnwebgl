@@ -66,7 +66,7 @@ void main() {
 
   float spacing = 15.;
   float hashcoords = mod(float(gl_FragCoord.x + gl_FragCoord.y), spacing);
-  float width = light * light * 13.0 + 0.3;
+  float width = light * light * 11.0 + 0.3;
   vec3 color = vec3( smoothstep((spacing-width)/2., (spacing-width)/2.+1., hashcoords) -
                      smoothstep(spacing-(spacing-width)/2., spacing-(spacing-width)/2.+1., hashcoords) );
 
@@ -143,9 +143,9 @@ void main() {
     var n = 190;
     function update() {
       n += 1;
-      translation[1] = Math.sin(n/30)*6;
-      rotation[1] = degToRad(n/2);
-      rotation[0] = degToRad(180 + Math.sin(n/200)*40);
+      translation[1] = Math.sin(n/50)*6;
+      rotation[1] = degToRad(n/4);
+      rotation[0] = degToRad(180 + Math.sin(n/300)*40);
       drawScene();
       requestAnimationFrame(update);
     }
