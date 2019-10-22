@@ -70,7 +70,8 @@ void main() {
   vec3 color = vec3( smoothstep((spacing-width)/2., (spacing-width)/2.+1., hashcoords) -
                      smoothstep(spacing-(spacing-width)/2., spacing-(spacing-width)/2.+1., hashcoords) );
 
-  gl_FragColor = max(vec4(max(color, vec3(border*light*0.2)), 1.0), 0.07);
+  // gl_FragColor = max(vec4(max(color, vec3(border*light*0.2)), 1.0), 0.07);
+  gl_FragColor = vec4(vec3(light), 1.);
 }
 </script><script>
   function main() {
@@ -125,6 +126,39 @@ void main() {
     // Put geometry data into buffer
     setColors(gl);
 
+    // create texture to render to
+    const targetTextureWidth = 256;
+    const targetTextureHeight = 256;
+    const targetTexture = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, targetTexture);
+
+    {
+      // define size and format of level 0
+      const level = 0;
+      const internalFormat = gl.RGBA;
+      const border = 0;
+      const format = gl.RGBA;
+      const type = gl.UNSIGNED_BYTE;
+      const data = null;
+      gl.texImage2D(gl.TEXTURE_2D, level, internalFormat,
+                    targetTextureWidth, targetTextureHeight, border,
+                    format, type, data);
+
+      // set the filtering so we don't need mips
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    }
+
+    // Create and bind the framebuffer
+    const fb = gl.createFramebuffer();
+    gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
+
+    // attach the texture as the first color attachment
+    const attachmentPoint = gl.COLOR_ATTACHMENT0;
+    const level = 0;
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, attachmentPoint, gl.TEXTURE_2D, targetTexture, level);
+
     function radToDeg(r) {
       return r * 180 / Math.PI;
     }
@@ -154,6 +188,9 @@ void main() {
 
     // Draw the scene.
     function drawScene() {
+      // render to the canvas
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+
       webglUtils.resizeCanvasToDisplaySize(gl.canvas);
 
       // Tell WebGL how to convert from clip space to pixels
@@ -169,7 +206,9 @@ void main() {
 
       // Enable the depth buffer
       gl.enable(gl.DEPTH_TEST);
-
+      drawIcosohedron();
+    }
+    function drawIcosohedron() {
       // Tell it to use our program (pair of shaders)
       gl.useProgram(program);
 
@@ -236,7 +275,7 @@ void main() {
           baryLocation, size, type, normalize, stride, offset);
 
       // Compute the projection matrix
-      var aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
+      var aspect = 1;
       var zNear = 1;
       var zFar = 2000;
       var matrix = m4.perspective(fieldOfViewRadians, aspect, zNear, zFar);
@@ -250,7 +289,7 @@ void main() {
       gl.uniformMatrix4fv(projectionMatrixLocation, false, matrix);
 
       // Compute the world matrix
-      var aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
+      var aspect = 1;
       var zNear = 1;
       var zFar = 2000;
       var matrix = m4.xRotation(rotation[0]);
