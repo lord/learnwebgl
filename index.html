@@ -54,7 +54,7 @@ void main() {
   }
   light /= float(sampleCount) * 2.0 + 1.0;
 
-  float width = light * light * (spacing-1.5);
+  float width = light * light * light * (spacing-1.5);
   vec3 color = vec3( smoothstep((spacing-width)/2., (spacing-width)/2.+1.8, hashDist) -
                      smoothstep(spacing-(spacing-width)/2., spacing-(spacing-width)/2.+1.8, hashDist) );
   gl_FragColor = vec4(max(color, 0.06), 1);
@@ -105,11 +105,11 @@ float gridFactor (vec2 vBC, float width, float feather) {
 
 void main() {
   vec3 normal = normalize(v_normal.xyz);
-  float light = max(0., dot(normal, normalize(vec3(0.5,0.5,1.5))));
+  float light = max(0.2, dot(normal, normalize(vec3(0.5,0.5,1.5))) * 0.6 + 0.4);
   float border = 1.0 - gridFactor(v_bary, 1.0, 0.1);
 
   // gl_FragColor = max(vec4(max(color, vec3(border*light*0.2)), 1.0), 0.07);
-  gl_FragColor = vec4(vec3(max(0.13, light)), 1.);
+  gl_FragColor = vec4(vec3(light), 1.);
 }
 </script><script>
   function main() {
