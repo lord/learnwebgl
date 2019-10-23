@@ -100,20 +100,10 @@ varying vec3 v_normal;
 varying vec4 v_color;
 varying vec2 v_bary;
 
-float gridFactor (vec2 vBC, float width, float feather) {
-  float w1 = width - feather * 0.5;
-  vec3 bary = vec3(vBC.x, vBC.y, 1.0 - vBC.x - vBC.y);
-  vec3 d = fwidth(bary);
-  vec3 a3 = smoothstep(d * w1, d * (w1 + feather), bary);
-  return min(min(a3.x, a3.y), a3.z);
-}
-
 void main() {
   vec3 normal = normalize(v_normal.xyz);
   float light = max(0.2, dot(normal, normalize(vec3(0.5,0.5,1.5))) * 0.6 + 0.4);
-  float border = 1.0 - gridFactor(v_bary, 1.0, 0.1);
-
-  // gl_FragColor = max(vec4(max(color, vec3(border*light*0.2)), 1.0), 0.07);
+  // gl_FragColor = max(vec4(vec3(color), 1.0), 0.07);
   gl_FragColor = vec4(vec3(light), 1.);
 }
 </script><script>
