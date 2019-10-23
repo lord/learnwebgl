@@ -37,8 +37,9 @@ void main() {
 
   vec2 normalizedCoords = unmirroredCoords;
   normalizedCoords.y = abs(sqscreen/15. + unmirroredCoords.y + sqscreen/14.) - sqscreen/14.;
+  normalizedCoords.x += step(unmirroredCoords.y, -sqscreen/7.) * sqscreen/150. * sin(u_time + (normalizedCoords.y / sqscreen * 80.));
 
-  const float SQUARE_ROOT_2 = 1.41421356237;
+  const float SQUARE_ROOT_2 = 1.414213576;
 
   float manhattanHashDist = mod(float(normalizedCoords.x + normalizedCoords.y), (spacing/SQUARE_ROOT_2) * 2.);
   normalizedCoords.x -= manhattanHashDist / 2.;
@@ -60,7 +61,7 @@ void main() {
   float width = light * light * light * (spacing-1.5);
   vec3 color = vec3( smoothstep((spacing-width)/2., (spacing-width)/2.+1.8, hashDist) -
                      smoothstep(spacing-(spacing-width)/2., spacing-(spacing-width)/2.+1.8, hashDist) );
-  color *= smoothstep(-sqscreen/2.8, -sqscreen/10., unmirroredCoords.y);
+  color -= color * step(unmirroredCoords.y, -sqscreen/7.) * (abs(unmirroredCoords.y / sqscreen * 0.8) + 0.6);
   color = max(color, 0.06); // background color
   gl_FragColor = vec4(max(color, 0.06), 1);
   // gl_FragColor = vec4(vec3(light), 1);
