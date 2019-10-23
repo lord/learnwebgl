@@ -29,9 +29,11 @@ uniform sampler2D u_texture;
 uniform float u_time;
 uniform vec2 u_screenres;
 void main() {
-  float spacing = 8. + sin(u_time/6.) * 3.;
-
   vec2 normalizedCoords = gl_FragCoord.xy - (u_screenres / 2.0);
+  float sqscreen = min(u_screenres.x, u_screenres.y);
+  float spacing = 8. + sin(u_time/7.) * 3.;
+  // adjust spacing for screen size
+  spacing *= sqscreen / 800.;
 
   const float SQUARE_ROOT_2 = 1.41421356237;
 
@@ -40,11 +42,10 @@ void main() {
   normalizedCoords.y -= manhattanHashDist / 2.;
   float hashDist = SQUARE_ROOT_2 * (manhattanHashDist / 2.);
 
-  float sqscreen = min(u_screenres.x, u_screenres.y);
   vec2 texCoord = vec2(normalizedCoords / sqscreen) + vec2(0.5, 0.5);
   float light = texture2D(u_texture, texCoord).x;
-  const int maxSampleCount = 20;
-  int sampleCount = int(sin(u_time/10.) * 7. + 5.);
+  const int maxSampleCount = 14;
+  int sampleCount = int(sin(u_time/11.) * 6. + 7.);
   for (int i = 0; i < maxSampleCount; i++) {
     if (i < sampleCount) {
       light += texture2D(u_texture, texCoord - vec2(float(i)/sqscreen)).x;
@@ -54,11 +55,10 @@ void main() {
   light /= float(sampleCount) * 2.0 + 1.0;
 
   float width = light * light * (spacing-1.5);
-  vec3 color = vec3( smoothstep((spacing-width)/2., (spacing-width)/2.+1., hashDist) -
-                     smoothstep(spacing-(spacing-width)/2., spacing-(spacing-width)/2.+1., hashDist) );
+  vec3 color = vec3( smoothstep((spacing-width)/2., (spacing-width)/2.+1.8, hashDist) -
+                     smoothstep(spacing-(spacing-width)/2., spacing-(spacing-width)/2.+1.8, hashDist) );
   gl_FragColor = vec4(max(color, 0.06), 1);
-  //gl_FragColor = vec4(vec3(light), 1);
-  //gl_FragColor = vec4(texCoord.xxy, 1);
+  // gl_FragColor = vec4(vec3(light), 1);
 }
 </script>
 <script id="3d-vertex-shader" type="x-shader/x-vertex">
@@ -388,7 +388,7 @@ void main() {
       var count = 20 * 3;
       gl.drawArrays(primitiveType, offset, count);
     }
-    var startTime = (new Date()).getTime();
+    var startTime = (new Date()).getTime() - Math.random() * 100000;
     // Draw the pixel shader
     function drawScreenStuff() {
       gl.useProgram(program2d);
