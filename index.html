@@ -26,20 +26,20 @@ void main() {
 <script id="2d-fragment-shader" type="x-shader/x-vertex">
 precision highp float;
 uniform sampler2D u_texture;
+uniform float u_time;
 uniform vec2 u_screenres;
 void main() {
-  float spacing = 7.;
+  float spacing = 8. + sin(u_time/6.) * 3.;
 
-  vec2 screenCoords = gl_FragCoord.xy;
+  vec2 normalizedCoords = gl_FragCoord.xy - (u_screenres / 2.0);
 
   const float SQUARE_ROOT_2 = 1.41421356237;
 
-  float manhattanHashDist = mod(float(screenCoords.x + screenCoords.y), (spacing/SQUARE_ROOT_2) * 2.);
-  screenCoords.x -= manhattanHashDist / 2.;
-  screenCoords.y -= manhattanHashDist / 2.;
+  float manhattanHashDist = mod(float(normalizedCoords.x + normalizedCoords.y), (spacing/SQUARE_ROOT_2) * 2.);
+  normalizedCoords.x -= manhattanHashDist / 2.;
+  normalizedCoords.y -= manhattanHashDist / 2.;
   float hashDist = SQUARE_ROOT_2 * (manhattanHashDist / 2.);
 
-  vec2 normalizedCoords = screenCoords - (u_screenres / 2.0);
   float sqscreen = min(u_screenres.x, u_screenres.y);
   vec2 texCoord = vec2(normalizedCoords / sqscreen) + vec2(0.5, 0.5);
   float light = texture2D(u_texture, texCoord).x;
@@ -50,7 +50,7 @@ void main() {
   }
   light /= float(sampleCount) * 2.0 + 1.0;
 
-  float width = light * light * 6.0;
+  float width = light * light * (spacing-1.5);
   vec3 color = vec3( smoothstep((spacing-width)/2., (spacing-width)/2.+1., hashDist) -
                      smoothstep(spacing-(spacing-width)/2., spacing-(spacing-width)/2.+1., hashDist) );
   gl_FragColor = vec4(max(color, 0.06), 1);
@@ -133,6 +133,7 @@ void main() {
     var position2dLocation = gl.getAttribLocation(program2d, "a_position");
     var textureLocation = gl.getUniformLocation(program2d, "u_texture");
     var screenResolutionLocation = gl.getUniformLocation(program2d, "u_screenres");
+    var timeLocation = gl.getUniformLocation(program2d, "u_time");
 
     // lookup uniforms
     var worldMatrixLocation = gl.getUniformLocation(program3d, "u_world");
@@ -384,6 +385,7 @@ void main() {
       var count = 20 * 3;
       gl.drawArrays(primitiveType, offset, count);
     }
+    var startTime = (new Date()).getTime();
     // Draw the pixel shader
     function drawScreenStuff() {
       gl.useProgram(program2d);
@@ -403,8 +405,8 @@ void main() {
       gl.vertexAttribPointer(
           position2dLocation, size, type, normalize, stride, offset);
 
-      // Set the matrix.
       gl.uniform2f(screenResolutionLocation, gl.canvas.width, gl.canvas.height);
+      gl.uniform1f(timeLocation, ((new Date()).getTime() - startTime)/1000);
 
       // Draw the geometry.
       var primitiveType = gl.TRIANGLES;
