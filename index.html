@@ -19,19 +19,19 @@
 <!-- vertex shader -->
 <script id="2d-vertex-shader" type="x-shader/x-vertex">
 attribute vec2 a_position;
-varying vec2 v_position;
 void main() {
   gl_Position = vec4(a_position, 0.5, 1.);
-  v_position = a_position;
 }
 </script>
 <script id="2d-fragment-shader" type="x-shader/x-vertex">
 precision highp float;
 uniform sampler2D u_texture;
-varying vec2 v_position;
+uniform vec2 u_screenres;
 void main() {
-  gl_FragColor = texture2D(u_texture, v_position*0.5+0.5);
-  // gl_FragColor = vec4(1., 0., 0., 1.);
+  vec2 normalizedCoords = gl_FragCoord.xy - (u_screenres / 2.0);
+  float sqscreen = min(u_screenres.x, u_screenres.y);
+  vec2 texCoord = vec2(normalizedCoords / sqscreen) + vec2(0.5, 0.5);
+  gl_FragColor = texture2D(u_texture, texCoord);
 }
 </script>
 <script id="3d-vertex-shader" type="x-shader/x-vertex">
@@ -114,6 +114,7 @@ void main() {
 
     var position2dLocation = gl.getAttribLocation(program2d, "a_position");
     var textureLocation = gl.getUniformLocation(program2d, "u_texture");
+    var screenResolutionLocation = gl.getUniformLocation(program2d, "u_screenres");
 
     // lookup uniforms
     var worldMatrixLocation = gl.getUniformLocation(program3d, "u_world");
@@ -309,8 +310,6 @@ void main() {
       // Bind the color buffer.
       gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
 
-      gl.uniform1i(textureLocation, 0);
-
       // Tell the attribute how to get data out of colorBuffer (ARRAY_BUFFER)
       var size = 3;                 // 3 components per iteration
       var type = gl.UNSIGNED_BYTE;  // the data is 8bit unsigned values
@@ -385,6 +384,9 @@ void main() {
       var offset = 0;        // start at the beginning of the buffer
       gl.vertexAttribPointer(
           position2dLocation, size, type, normalize, stride, offset);
+
+      // Set the matrix.
+      gl.uniform2f(screenResolutionLocation, gl.canvas.width, gl.canvas.height);
 
       // Draw the geometry.
       var primitiveType = gl.TRIANGLES;
