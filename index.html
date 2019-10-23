@@ -29,11 +29,14 @@ uniform sampler2D u_texture;
 uniform float u_time;
 uniform vec2 u_screenres;
 void main() {
-  vec2 normalizedCoords = gl_FragCoord.xy - (u_screenres / 2.0);
+  vec2 unmirroredCoords = gl_FragCoord.xy - (u_screenres / 2.0);
   float sqscreen = min(u_screenres.x, u_screenres.y);
   float spacing = 8. + sin(u_time/7.) * 3.;
   // adjust spacing for screen size
   spacing *= sqscreen / 800.;
+
+  vec2 normalizedCoords = unmirroredCoords;
+  normalizedCoords.y = abs(unmirroredCoords.y + sqscreen/5.7) - sqscreen/5.7;
 
   const float SQUARE_ROOT_2 = 1.41421356237;
 
@@ -57,6 +60,8 @@ void main() {
   float width = light * light * light * (spacing-1.5);
   vec3 color = vec3( smoothstep((spacing-width)/2., (spacing-width)/2.+1.8, hashDist) -
                      smoothstep(spacing-(spacing-width)/2., spacing-(spacing-width)/2.+1.8, hashDist) );
+  color *= smoothstep(-sqscreen/2.8, -sqscreen/10., unmirroredCoords.y);
+  color = max(color, 0.06); // background color
   gl_FragColor = vec4(max(color, 0.06), 1);
   // gl_FragColor = vec4(vec3(light), 1);
 }
