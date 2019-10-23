@@ -30,23 +30,32 @@ uniform vec2 u_screenres;
 void main() {
   float spacing = 15.;
 
-  vec2 normalizedCoords = gl_FragCoord.xy - (u_screenres / 2.0);
+  vec2 screenCoords = gl_FragCoord.xy;
+
+  const float SQUARE_ROOT_2 = 1.41421356237;
+
+  float manhattanHashDist = mod(float(screenCoords.x + screenCoords.y), (spacing/SQUARE_ROOT_2) * 2.);
+  screenCoords.x -= manhattanHashDist / 2.;
+  screenCoords.y -= manhattanHashDist / 2.;
+  float hashDist = SQUARE_ROOT_2 * (manhattanHashDist / 2.);
+
+  vec2 normalizedCoords = screenCoords - (u_screenres / 2.0);
   float sqscreen = min(u_screenres.x, u_screenres.y);
   vec2 texCoord = vec2(normalizedCoords / sqscreen) + vec2(0.5, 0.5);
-  // gl_FragColor = texture2D(u_texture, texCoord);
   float light = texture2D(u_texture, texCoord).x;
-  const int sampleCount = 15;
+  const int sampleCount = 8;
   for (int i = 0; i < sampleCount; i++) {
     light += texture2D(u_texture, texCoord - vec2(float(i)/sqscreen)).x;
     light += texture2D(u_texture, texCoord + vec2(float(i)/sqscreen)).x;
   }
   light /= float(sampleCount) * 2.0 + 1.0;
 
-  float hashcoords = mod(float(gl_FragCoord.x + gl_FragCoord.y), spacing);
   float width = light * light * 11.0;
-  vec3 color = vec3( smoothstep((spacing-width)/2., (spacing-width)/2.+1., hashcoords) -
-                     smoothstep(spacing-(spacing-width)/2., spacing-(spacing-width)/2.+1., hashcoords) );
+  vec3 color = vec3( smoothstep((spacing-width)/2., (spacing-width)/2.+1., hashDist) -
+                     smoothstep(spacing-(spacing-width)/2., spacing-(spacing-width)/2.+1., hashDist) );
   gl_FragColor = vec4(max(color, 0.06), 1);
+  //gl_FragColor = vec4(vec3(light), 1);
+  //gl_FragColor = vec4(texCoord.xxy, 1);
 }
 </script>
 <script id="3d-vertex-shader" type="x-shader/x-vertex">
