@@ -36,7 +36,7 @@ void main() {
   spacing *= sqscreen / 800.;
 
   vec2 normalizedCoords = unmirroredCoords;
-  normalizedCoords.y = abs(unmirroredCoords.y + sqscreen/5.7) - sqscreen/5.7;
+  normalizedCoords.y = abs(sqscreen/15. + unmirroredCoords.y + sqscreen/14.) - sqscreen/14.;
 
   const float SQUARE_ROOT_2 = 1.41421356237;
 
@@ -247,7 +247,7 @@ void main() {
     var n = 190;
     function update() {
       n += 1;
-      translation[1] = Math.sin(n/50)*6;
+      translation[1] = Math.sin(n/50)*6 + 50;
       rotation[1] = degToRad(n/4);
       rotation[0] = degToRad(180 + Math.sin(n/300)*40);
       drawScene();
